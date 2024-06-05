@@ -19,4 +19,7 @@ public class AvisEntity {
     private int id;
     private String  message;
     private String statut;
+
+    @ManyToOne
+    private UsersEntity users;
 }

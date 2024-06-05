@@ -7,7 +7,11 @@ import com.gildas.springBaseProjet.entity.UsersEntity;
 import com.gildas.springBaseProjet.entity.ValidationEntity;
 import com.gildas.springBaseProjet.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +22,10 @@ import java.util.Optional;
 @Service
 @AllArgsConstructor
 @Slf4j
-public class UserService {
+public class UserService implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private UserRepository userRepository;
+    private PasswordEncoder passwordEncoder;
     private ValidationService validationService;
 
     public void inscription(UsersEntity user) {
@@ -37,10 +41,8 @@ public class UserService {
         role.setLibelle(TypeRoles.USERS);
         user.setRole(role);
 
-
         user = this.userRepository.save(user);
         this.validationService.enregistrer(user);
-
     }
 
     public void activation(Map<String, String> activation) {
@@ -54,5 +56,13 @@ public class UserService {
         );
         users.setActif(true);
         this.userRepository.save(users);
+    }
+
+    @Override
+    public UsersEntity loadUserByUsername(String username) throws UsernameNotFoundException {
+        return this.userRepository.findByEmail(username)
+                .orElseThrow(
+                    () -> new UsernameNotFoundException("L'utilisateur n'existe pas")
+                );
     }
 }
