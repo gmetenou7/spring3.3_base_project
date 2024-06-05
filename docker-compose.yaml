@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "${POSTGRES_PORT}:${CONTAINER_POSTGRES_PORT}"
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "${PGADMIN_PORT}:${CONTAINER_PGADMIN_PORT}"
+    networks:
+      - app-network
+
+  app:
+    build: .
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "${SPRING_APP_PORT}:${CONTAINER_SPRING_APP_PORT}"
+    networks:
+      - app-network
+
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    restart: always
+    ports:
+      - '${EMAIL_APPLICATION_PORT}:${CONTAINER_EMAIL_APPLICATION_PORT}'
+      - '${EMAIL_PORT}:${CONTAINER_EMAIL_PORT}'
+      - '143:143'
+    volumes:
+      - smtp4dev-data:/smtp4dev
+    environment:
+      - ServerOptions__BasePath=/smtp4dev
+      - ServerOptions__Urls=http://*:80
+      - ServerOptions__HostName=smtp4dev
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  smtp4dev-data:
+
+networks:
+  app-network:
+    driver: bridge
