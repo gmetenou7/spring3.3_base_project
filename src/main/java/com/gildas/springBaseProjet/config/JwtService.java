@@ -1,6 +1,7 @@
 package com.gildas.springBaseProjet.config;
 
 
+import com.gildas.springBaseProjet.assets.errors.specific.ResourceNotFoundException;
 import com.gildas.springBaseProjet.entity.JwtEntity;
 import com.gildas.springBaseProjet.entity.UsersEntity;
 import com.gildas.springBaseProjet.repository.JwtRepository;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Service
@@ -106,4 +108,10 @@ public class JwtService {
     }
 
 
+    public JwtEntity tokenByValue(String value) {
+        return this.jwtRepository.findByValeur(value)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Token not found")
+                );
+    }
 }
