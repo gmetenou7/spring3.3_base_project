@@ -24,5 +24,5 @@ public interface JwtRepository extends CrudRepository<JwtEntity, Long> {
     Stream<JwtEntity> findUtilisateur(String email);
 
 
-
+    void deleteAllByExpireAndDesactive(boolean expire, boolean desactive);
 }

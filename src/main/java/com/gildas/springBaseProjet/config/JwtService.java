@@ -14,11 +14,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -128,8 +130,6 @@ public class JwtService {
         return Keys.hmacShaKeyFor(decoder);
     }
 
-
-
     public void deconnexion() {
         UsersEntity usersEntity = (UsersEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -143,6 +143,10 @@ public class JwtService {
         this.jwtRepository.save(jwtEntity);
     }
 
-
+    @Scheduled(cron = "0 * * * * *") //toutes les minutes
+    public void removeUselessJwt() {
+        log.info("Suppression des token à {}", Instant.now());
+        this.jwtRepository.deleteAllByExpireAndDesactive(true, true);
+    }
 
 }
