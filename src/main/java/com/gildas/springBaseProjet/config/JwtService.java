@@ -14,14 +14,16 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Transactional
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -34,17 +36,25 @@ public class JwtService {
     private UserService userService;
     private JwtRepository jwtRepository;
 
+    public JwtEntity tokenByValue(String value) {
+        return this.jwtRepository.findByValeurAndDesactiveAndExpire(
+                value,
+                false,
+                false
+        ).orElseThrow(() -> new ResourceNotFoundException("Token invalide ou inconnu"));
+    }
 
     public Map<String, String> generateToken(String username) {
         UsersEntity usersEntity  = this.userService.loadUserByUsername(username);
-        final Map<String, String> jwtMap = this.generateJwt(usersEntity);
+        this.disableTokens(usersEntity);
+        final Map<String, String> jwtMap = new HashMap<>(this.generateJwt(usersEntity));
 
        final JwtEntity jwtEntity =
                JwtEntity
-                        .builder()
+                       .builder()
                        .valeur(jwtMap.get(BEARER))
-                        .desactive(false)
-                        .expire(false)
+                       .desactive(false)
+                       .expire(false)
                        .expire(false)
                        .users(usersEntity)
                        .build();
@@ -53,13 +63,28 @@ public class JwtService {
         return jwtMap;
     }
 
+    private void disableTokens(UsersEntity usersEntity) {
+
+        final List<JwtEntity> jwtEntities = this.jwtRepository.findUtilisateur(usersEntity.getEmail()).peek(
+                jwtEntity -> {
+                    jwtEntity.setExpire(true);
+                    jwtEntity.setDesactive(true);
+                }
+        ).collect(Collectors.toList());
+        this.jwtRepository.saveAll(jwtEntities);
+    }
+
     public String readUserNameOnDB(String token) {
         return this.getClaim(token, Claims::getSubject);
     }
 
     public Boolean isTokenExpired(String token) {
-        Date expirationDate = this.getClaim(token, Claims::getExpiration);
+        Date expirationDate = getExpirationDateFromToken(token);
         return expirationDate.before(new Date());
+    }
+
+    private Date getExpirationDateFromToken(String token) {
+        return this.getClaim(token, Claims::getExpiration);
     }
 
     private <T> T getClaim(String token, Function<Claims, T> function) {
@@ -77,12 +102,12 @@ public class JwtService {
     }
 
     private Map<String, String> generateJwt(UsersEntity usersEntity) {
+
         final long currentTime = System.currentTimeMillis();
         final long expirationTime = currentTime + 1000 * 60 * 60 * 24;
 
-        Map<String, Object> claims = Map.of(
+        final Map<String, Object> claims = Map.of(
                 "username", usersEntity.getUsername(),
-                "email", usersEntity.getEmail(),
                 Claims.EXPIRATION, new Date(expirationTime),
                 Claims.SUBJECT, usersEntity.getEmail()
         );
@@ -100,18 +125,24 @@ public class JwtService {
     private SecretKey getKey() {
         String ENCRYPTION_KEY = environment.getProperty("jwt.secretKey");
         final byte[] decoder =  Decoders.BASE64.decode(ENCRYPTION_KEY);
-        if (decoder == null) {
-            log.error("Tentative de décodage avec une valeur nulle détectée");
-            throw new IllegalStateException("Tentative de décodage avec une valeur nulle détectée");
-        }
         return Keys.hmacShaKeyFor(decoder);
     }
 
 
-    public JwtEntity tokenByValue(String value) {
-        return this.jwtRepository.findByValeur(value)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException("Token not found")
-                );
+
+    public void deconnexion() {
+        UsersEntity usersEntity = (UsersEntity) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        JwtEntity jwtEntity = this.jwtRepository.findUtilisateurValidToken(
+                usersEntity.getEmail(),
+                false,
+                false
+        ).orElseThrow(() -> new RuntimeException("Token invalide"));
+        jwtEntity.setExpire(true);
+        jwtEntity.setDesactive(true);
+        this.jwtRepository.save(jwtEntity);
     }
+
+
+
 }
