@@ -40,6 +40,8 @@ public class SecurityConfig {
                                         .requestMatchers(POST,"/users/inscription").permitAll()
                                         .requestMatchers(POST,"/users/activation").permitAll()
                                         .requestMatchers(POST,"/users/connexion").permitAll()
+                                        .requestMatchers(POST,"/users/get_code_for_update_password").permitAll()
+                                        .requestMatchers(POST,"/users/new_password").permitAll()
                                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                                         .anyRequest().authenticated()
                 )

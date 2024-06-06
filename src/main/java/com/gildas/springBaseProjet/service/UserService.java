@@ -9,6 +9,7 @@ import com.gildas.springBaseProjet.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -65,4 +66,22 @@ public class UserService implements UserDetailsService {
                     () -> new UsernameNotFoundException("L'utilisateur n'existe pas")
                 );
     }
+
+    public void userPasswordUpdate(Map<String, String> body) {
+        UsersEntity usersEntity = this.loadUserByUsername(body.get("email"));
+        this.validationService.enregistrer(usersEntity);
+    }
+
+    public void newPasswordUpdate(Map<String, String> body) {
+        UsersEntity usersEntity = this.loadUserByUsername(body.get("email"));
+        final ValidationEntity validation = validationService.rechercheEnFonctionDuCode(body.get("code"));
+        if(validation.getUser().getEmail().equals(usersEntity.getEmail())) {
+            String mdpCrypte = this.passwordEncoder.encode(body.get("password"));
+            usersEntity.setPassword(mdpCrypte);
+            this.userRepository.save(usersEntity);
+        }
+    }
+
+
+
 }

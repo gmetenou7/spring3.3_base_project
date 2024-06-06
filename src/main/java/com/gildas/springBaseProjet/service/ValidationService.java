@@ -5,6 +5,8 @@ import com.gildas.springBaseProjet.entity.UsersEntity;
 import com.gildas.springBaseProjet.entity.ValidationEntity;
 import com.gildas.springBaseProjet.repository.ValidationRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -12,6 +14,7 @@ import java.util.Random;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ValidationService {
@@ -43,4 +46,12 @@ public class ValidationService {
                 () -> new ResourceNotFoundException("le code n'a pas été trouver")
         );
     }
+
+    @Scheduled(cron = "@daily") //toutes les jours
+    public void removeUselessJwt() {
+        final Instant now = Instant.now();
+        log.info("Suppression des code expiré à {}", now);
+        this.validationRepository.deleteAllByExpirationBefore(now);
+    }
+
 }

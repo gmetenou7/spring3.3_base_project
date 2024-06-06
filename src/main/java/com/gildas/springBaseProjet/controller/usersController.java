@@ -50,12 +50,23 @@ public class usersController {
         return null;
     }
 
+    @PostMapping("/get_code_for_update_password")
+    public void updatePassword(@RequestBody Map<String, String> body){
+        this.userService.userPasswordUpdate(body);
+    }
+
+    @PostMapping("/new_password")
+    public void newPassword(@RequestBody Map<String, String> body){
+        this.userService.newPasswordUpdate(body);
+    }
+
 
     @SecurityRequirement(name="Bearer Authentication")
     @GetMapping("/deconnexion")
     public void deconnexion() {
         this.jwtService.deconnexion();
     }
+
 
 
 

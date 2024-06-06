@@ -25,7 +25,7 @@ public class ValidationEntity {
     private Instant activation;
     private String code;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.DETACH})
     private UsersEntity user;
 
 }
