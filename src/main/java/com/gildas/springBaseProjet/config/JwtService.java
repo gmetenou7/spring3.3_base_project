@@ -1,6 +1,9 @@
 package com.gildas.springBaseProjet.config;
 
+
+import com.gildas.springBaseProjet.entity.JwtEntity;
 import com.gildas.springBaseProjet.entity.UsersEntity;
+import com.gildas.springBaseProjet.repository.JwtRepository;
 import com.gildas.springBaseProjet.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -22,13 +25,30 @@ import java.util.function.Function;
 @Slf4j
 public class JwtService {
 
+    public static final String BEARER = "bearer";
+
     @Autowired
     private final Environment environment;
     private UserService userService;
+    private JwtRepository jwtRepository;
+
 
     public Map<String, String> generateToken(String username) {
         UsersEntity usersEntity  = this.userService.loadUserByUsername(username);
-        return this.generateJwt(usersEntity);
+        final Map<String, String> jwtMap = this.generateJwt(usersEntity);
+
+       final JwtEntity jwtEntity =
+               JwtEntity
+                        .builder()
+                       .valeur(jwtMap.get(BEARER))
+                        .desactive(false)
+                        .expire(false)
+                       .expire(false)
+                       .users(usersEntity)
+                       .build();
+
+        this.jwtRepository.save(jwtEntity);
+        return jwtMap;
     }
 
     public String readUserNameOnDB(String token) {
@@ -72,7 +92,7 @@ public class JwtService {
                 .claims(claims)
                 .signWith(getKey())
                 .compact();
-        return Map.of("Bearer", bearer);
+        return Map.of(BEARER, bearer);
     }
 
     private SecretKey getKey() {
