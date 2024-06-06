@@ -18,8 +18,6 @@ public interface JwtRepository extends CrudRepository<JwtEntity, Long> {
     @Query("FROM JwtEntity j WHERE j.expire = :expire AND j.desactive = :desactive AND j.users.email = :email")
     Optional<JwtEntity> findUtilisateurValidToken(String email, boolean desactive, boolean expire);
 
-
-
     @Query("FROM JwtEntity j WHERE j.users.email=:email")
     Stream<JwtEntity> findUtilisateur(String email);
 
