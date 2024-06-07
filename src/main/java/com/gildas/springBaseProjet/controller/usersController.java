@@ -50,6 +50,11 @@ public class usersController {
         return null;
     }
 
+    @PostMapping("/refresh_token")
+    public @ResponseBody Map<String, String> refresh_token(@RequestBody Map<String, String> refreshTokenRequest){
+       return this.jwtService.refreshToken(refreshTokenRequest);
+    }
+
     @PostMapping("/get_code_for_update_password")
     public void updatePassword(@RequestBody Map<String, String> body){
         this.userService.userPasswordUpdate(body);

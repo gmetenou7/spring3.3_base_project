@@ -3,6 +3,7 @@ package com.gildas.springBaseProjet.config;
 
 import com.gildas.springBaseProjet.assets.errors.specific.ResourceNotFoundException;
 import com.gildas.springBaseProjet.entity.JwtEntity;
+import com.gildas.springBaseProjet.entity.RefreshTokenEntity;
 import com.gildas.springBaseProjet.entity.UsersEntity;
 import com.gildas.springBaseProjet.repository.JwtRepository;
 import com.gildas.springBaseProjet.service.UserService;
@@ -32,6 +33,8 @@ import java.util.stream.Collectors;
 public class JwtService {
 
     public static final String BEARER = "bearer";
+    public static final String REFRESH_TOKEN = "refresh";
+    public static final String TOKEN_INVALIDE = "Token invalide";
 
     @Autowired
     private final Environment environment;
@@ -51,6 +54,14 @@ public class JwtService {
         this.disableTokens(usersEntity);
         final Map<String, String> jwtMap = new HashMap<>(this.generateJwt(usersEntity));
 
+        RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity
+                .builder()
+                .valeur(UUID.randomUUID().toString())
+                .expire(false)
+                .creation(Instant.now())
+                .expiration(Instant.now().plusMillis(30 * 60 * 1000)) //30min
+                .build();
+
        final JwtEntity jwtEntity =
                JwtEntity
                        .builder()
@@ -59,9 +70,11 @@ public class JwtService {
                        .expire(false)
                        .expire(false)
                        .users(usersEntity)
+                       .refreshToken(refreshTokenEntity)
                        .build();
 
         this.jwtRepository.save(jwtEntity);
+        jwtMap.put(REFRESH_TOKEN, refreshTokenEntity.getValeur());
         return jwtMap;
     }
 
@@ -106,7 +119,7 @@ public class JwtService {
     private Map<String, String> generateJwt(UsersEntity usersEntity) {
 
         final long currentTime = System.currentTimeMillis();
-        final long expirationTime = currentTime + 1000 * 60 * 60 * 24;
+        final long expirationTime = currentTime + 1000 * 60 * 60 * 2; //2h
 
         final Map<String, Object> claims = Map.of(
                 "username", usersEntity.getUsername(),
@@ -137,7 +150,7 @@ public class JwtService {
                 usersEntity.getEmail(),
                 false,
                 false
-        ).orElseThrow(() -> new RuntimeException("Token invalide"));
+        ).orElseThrow(() -> new RuntimeException(TOKEN_INVALIDE));
         jwtEntity.setExpire(true);
         jwtEntity.setDesactive(true);
         this.jwtRepository.save(jwtEntity);
@@ -149,4 +162,15 @@ public class JwtService {
         this.jwtRepository.deleteAllByExpireAndDesactive(true, true);
     }
 
+    public Map<String, String> refreshToken(Map<String, String> refreshTokenRequest) {
+        JwtEntity jwtEntity = this.jwtRepository.findByRefreshToken(refreshTokenRequest.get(REFRESH_TOKEN)).orElseThrow(
+                () -> new RuntimeException(TOKEN_INVALIDE)
+        );
+        if(jwtEntity.getRefreshToken().isExpire() || jwtEntity.getRefreshToken().getExpiration().isBefore(Instant.now())) {
+            throw new RuntimeException(TOKEN_INVALIDE);
+        }
+        this.disableTokens(jwtEntity.getUsers());
+        return this.generateToken(jwtEntity.getUsers().getEmail());
+
+    }
 }

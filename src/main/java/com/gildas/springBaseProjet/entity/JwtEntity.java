@@ -20,9 +20,13 @@ public class JwtEntity {
     private boolean desactive;
     private boolean expire;
 
+
     @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE})
     @JoinColumn(name = "users_id")
     private UsersEntity users;
 
     private String valeur;
+
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
+    private RefreshTokenEntity refreshToken;
 }

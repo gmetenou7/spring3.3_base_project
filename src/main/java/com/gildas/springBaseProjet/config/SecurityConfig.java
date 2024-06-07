@@ -42,12 +42,12 @@ public class SecurityConfig {
                                         .requestMatchers(POST,"/users/connexion").permitAll()
                                         .requestMatchers(POST,"/users/get_code_for_update_password").permitAll()
                                         .requestMatchers(POST,"/users/new_password").permitAll()
+                                        .requestMatchers(POST,"/users/refresh_token").permitAll()
                                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/webjars/**", "/v3/api-docs/**", "/swagger-resources/**").permitAll()
                                         .anyRequest().authenticated()
                 )
                 .sessionManagement(
                       httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-
                 )
                 .addFilterBefore(jwtFilter ,UsernamePasswordAuthenticationFilter.class)
                 .build();
