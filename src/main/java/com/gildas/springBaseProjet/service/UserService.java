@@ -53,8 +53,9 @@ public class UserService implements UserDetailsService {
         }
 
        UsersEntity users = this.userRepository.findById(validation.getUser().getId()).orElseThrow(
-                () -> new ResourceNotFoundException("l'utilisateur n'existe pas")
+               () -> new ResourceNotFoundException("l'utilisateur n'existe pas")
         );
+
         users.setActif(true);
         this.userRepository.save(users);
     }

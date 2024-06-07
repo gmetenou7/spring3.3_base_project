@@ -40,10 +40,21 @@ public class UsersEntity implements UserDetails {
     @OneToOne(cascade = CascadeType.ALL)
     private RoleEntity role;
 
+
+    /*
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_"+this.role.getLibelle()));
     }
+    *
+     */
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return this.role.getLibelle().getAuthorities();
+    }
+
+
 
     @Override
     public String getPassword() {
